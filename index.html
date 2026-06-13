@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOC Command Center | Security Operations Dashboard</title>
+  <meta name="description" content="Industry-grade Security Operations Center monitoring dashboard with real-time threat intelligence, SIEM alerts, and automated SOAR playbook execution." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ─── Sidebar Navigation ─── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <span class="brand-text">SOC<strong>Center</strong></span>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Close sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="sidebar-section-label">MAIN MENU</div>
+
+    <nav class="nav-links">
+      <a href="#" class="nav-item active" data-view="dashboard" id="nav-dashboard">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-view="alerts" id="nav-alerts">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 01-3.46 0"/>
+        </svg>
+        <span>Alert Triage</span>
+        <span class="nav-badge" id="nav-alert-count">0</span>
+      </a>
+      <a href="#" class="nav-item" data-view="intel" id="nav-intel">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span>Threat Intel</span>
+      </a>
+      <a href="#" class="nav-item" data-view="playbooks" id="nav-playbooks">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        <span>SOAR Playbooks</span>
+      </a>
+      <a href="#" class="nav-item" data-view="simulator" id="nav-simulator">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <span>Simulator</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-section-label" style="margin-top:auto">SYSTEM</div>
+    <div class="sidebar-status">
+      <div class="status-row">
+        <span class="status-dot green"></span>
+        <span>SIEM Engine</span>
+        <span class="status-value">Online</span>
+      </div>
+      <div class="status-row">
+        <span class="status-dot green"></span>
+        <span>Threat Feed</span>
+        <span class="status-value">Active</span>
+      </div>
+      <div class="status-row">
+        <span class="status-dot" id="sim-status-dot" style="background:#94a3b8"></span>
+        <span>Simulator</span>
+        <span class="status-value" id="sim-status-text">Idle</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ─── Main Content ─── -->
+  <div class="main-layout">
+
+    <!-- Top Header Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="page-title" id="page-title">Dashboard Overview</div>
+      </div>
+      <div class="topbar-right">
+        <div class="threat-level-pill" id="threat-level-pill">
+          <span class="threat-pulse" id="threat-pulse"></span>
+          <span id="threat-level-label">MEDIUM RISK</span>
+        </div>
+        <button class="theme-toggle-btn" id="themeToggle" title="Toggle Dark/Light Mode" aria-label="Toggle dark mode">
+          <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+        <div class="topbar-clock" id="topbar-clock">--:--:--</div>
+        <div class="topbar-avatar" title="Analyst: J. Smith">JS</div>
+      </div>
+    </header>
+
+    <!-- View Container -->
+    <main class="content-area" id="content-area">
+
+      <!-- ══════════════════ DASHBOARD VIEW ══════════════════ -->
+      <section class="view active" id="view-dashboard">
+
+        <!-- KPI Strip -->
+        <div class="kpi-grid">
+          <div class="kpi-card glass">
+            <div class="kpi-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+            <div class="kpi-data">
+              <div class="kpi-value" id="kpi-critical">0</div>
+              <div class="kpi-label">Critical Alerts</div>
+            </div>
+            <div class="kpi-trend up" id="kpi-critical-trend">↑ 12%</div>
+          </div>
+          <div class="kpi-card glass">
+            <div class="kpi-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <div class="kpi-data">
+              <div class="kpi-value" id="kpi-active">0</div>
+              <div class="kpi-label">Active Incidents</div>
+            </div>
+            <div class="kpi-trend up" id="kpi-active-trend">↑ 5%</div>
+          </div>
+          <div class="kpi-card glass">
+            <div class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+            <div class="kpi-data">
+              <div class="kpi-value" id="kpi-eps">0</div>
+              <div class="kpi-label">Events/Second</div>
+            </div>
+            <div class="kpi-trend neutral" id="kpi-eps-trend">→ 0.3%</div>
+          </div>
+          <div class="kpi-card glass">
+            <div class="kpi-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="kpi-data">
+              <div class="kpi-value" id="kpi-resolved">0</div>
+              <div class="kpi-label">Resolved Today</div>
+            </div>
+            <div class="kpi-trend down" id="kpi-resolved-trend">↓ 2%</div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+          <div class="glass chart-card wide">
+            <div class="card-header">
+              <div class="card-title">Live Event Ingestion Rate</div>
+              <div class="card-subtitle" id="eps-display">0 EPS</div>
+            </div>
+            <div class="chart-wrap"><canvas id="epsChart"></canvas></div>
+          </div>
+          <div class="glass chart-card">
+            <div class="card-header">
+              <div class="card-title">Incidents by Category</div>
+            </div>
+            <div class="chart-wrap donut-wrap"><canvas id="categoryChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="bottom-row">
+          <div class="glass chart-card" style="flex:1.2">
+            <div class="card-header">
+              <div class="card-title">Severity Breakdown</div>
+            </div>
+            <div class="chart-wrap"><canvas id="severityChart"></canvas></div>
+          </div>
+          <div class="glass recent-alerts-card" style="flex:2">
+            <div class="card-header">
+              <div class="card-title">Recent Alerts</div>
+              <button class="btn-text" data-view-link="alerts">View All →</button>
+            </div>
+            <div class="alert-list" id="recent-alerts-list">
+              <div class="empty-state">No alerts yet. Start the simulator →</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════ ALERT TRIAGE VIEW ══════════════════ -->
+      <section class="view" id="view-alerts">
+        <div class="view-toolbar glass">
+          <div class="filter-group">
+            <label for="filter-severity" class="sr-only">Filter by Severity</label>
+            <select id="filter-severity" class="filter-select" aria-label="Filter by Severity">
+              <option value="">All Severities</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+            <label for="filter-status" class="sr-only">Filter by Status</label>
+            <select id="filter-status" class="filter-select" aria-label="Filter by Status">
+              <option value="">All Statuses</option>
+              <option value="Open">Open</option>
+              <option value="Investigating">Investigating</option>
+              <option value="Remediated">Remediated</option>
+            </select>
+            <label for="filter-category" class="sr-only">Filter by Category</label>
+            <select id="filter-category" class="filter-select" aria-label="Filter by Category">
+              <option value="">All Categories</option>
+              <option value="Malware">Malware</option>
+              <option value="Intrusion">Intrusion</option>
+              <option value="DDoS">DDoS</option>
+              <option value="Phishing">Phishing</option>
+              <option value="Exfiltration">Exfiltration</option>
+              <option value="Ransomware">Ransomware</option>
+            </select>
+          </div>
+          <div class="search-wrap">
+            <label for="alert-search" class="sr-only">Search alerts</label>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="alert-search" placeholder="Search alerts, IPs, hostnames..." class="search-input" aria-label="Search alerts" />
+          </div>
+        </div>
+
+        <div class="triage-layout">
+          <div class="alert-table-wrap glass">
+            <table class="alert-table">
+              <thead>
+                <tr>
+                  <th>Severity</th>
+                  <th>Alert Name</th>
+                  <th>Source IP</th>
+                  <th>Hostname</th>
+                  <th>Category</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="alert-table-body">
+                <tr><td colspan="8" class="empty-cell">No alerts yet. Start the simulator.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Alert Detail Panel -->
+          <aside class="alert-detail-panel glass" id="alert-detail-panel">
+            <div class="detail-placeholder">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <p>Select an alert to inspect details</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ══════════════════ THREAT INTEL VIEW ══════════════════ -->
+      <section class="view" id="view-intel">
+        <div class="intel-grid">
+          <div class="glass intel-search-card">
+            <div class="card-header"><div class="card-title">IOC Lookup</div></div>
+            <div class="ioc-search-form">
+              <div class="ioc-type-tabs">
+                <button class="ioc-tab active" data-ioc="ip" id="ioc-tab-ip">IP Address</button>
+                <button class="ioc-tab" data-ioc="hash" id="ioc-tab-hash">File Hash</button>
+                <button class="ioc-tab" data-ioc="domain" id="ioc-tab-domain">Domain</button>
+              </div>
+              <div class="ioc-input-row">
+                <label for="ioc-input" class="sr-only">IOC Search Value</label>
+                <input type="text" id="ioc-input" class="ioc-input" placeholder="Enter IP, hash, or domain..." aria-label="IOC value" />
+                <button class="btn-primary" id="ioc-lookup-btn">Lookup</button>
+              </div>
+              <div class="ioc-result" id="ioc-result">
+                <div class="ioc-empty">Enter an indicator to analyze threat context.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass intel-feed-card">
+            <div class="card-header"><div class="card-title">Live Threat Feed</div><div class="card-subtitle">Auto-refreshing</div></div>
+            <div class="threat-feed" id="threat-feed">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+          <div class="glass intel-vuln-card">
+            <div class="card-header"><div class="card-title">Active CVE Watchlist</div></div>
+            <div class="vuln-list" id="vuln-list">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+          <div class="glass intel-mitre-card">
+            <div class="card-header"><div class="card-title">MITRE ATT&CK Coverage</div></div>
+            <div class="mitre-grid" id="mitre-grid">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════ PLAYBOOKS VIEW ══════════════════ -->
+      <section class="view" id="view-playbooks">
+        <div class="playbooks-grid">
+          <div class="glass playbook-list-card">
+            <div class="card-header"><div class="card-title">Available Playbooks</div></div>
+            <div class="playbook-items" id="playbook-items">
+              <!-- populated by JS -->
+            </div>
+          </div>
+          <div class="glass playbook-terminal-card">
+            <div class="card-header">
+              <div class="card-title">Execution Console</div>
+              <button class="btn-ghost btn-sm" id="clear-terminal">Clear</button>
+            </div>
+            <div class="terminal" id="playbook-terminal">
+              <div class="terminal-prompt">$ Select a playbook to execute...</div>
+            </div>
+          </div>
+          <div class="glass playbook-log-card">
+            <div class="card-header"><div class="card-title">Execution History</div></div>
+            <div class="execution-log" id="execution-log">
+              <div class="empty-state">No executions yet.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════ SIMULATOR VIEW ══════════════════ -->
+      <section class="view" id="view-simulator">
+        <div class="simulator-grid">
+          <div class="glass sim-control-card">
+            <div class="card-header"><div class="card-title">Simulator Controls</div></div>
+            <div class="sim-controls">
+              <div class="sim-row">
+                <label class="sim-label" for="eps-slider">Ingestion Rate (EPS)</label>
+                <div class="sim-slider-row">
+                  <input type="range" min="1" max="200" value="10" id="eps-slider" class="slider" aria-label="Ingestion Rate (EPS)" />
+                  <span class="sim-value" id="eps-slider-val">10</span>
+                </div>
+              </div>
+              <div class="sim-row">
+                <label class="sim-label">Simulator State</label>
+                <div class="sim-btn-group">
+                  <button class="btn-primary" id="sim-start">▶ Start</button>
+                  <button class="btn-danger" id="sim-stop" disabled>■ Stop</button>
+                  <button class="btn-ghost" id="sim-clear">✕ Clear</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass sim-attacks-card">
+            <div class="card-header"><div class="card-title">Attack Campaign Launcher</div><div class="card-subtitle">Inject synthetic threat scenarios</div></div>
+            <div class="attack-cards" id="attack-cards">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+          <div class="glass sim-log-card">
+            <div class="card-header">
+              <div class="card-title">Raw Event Stream</div>
+              <div class="live-badge" id="live-badge">● LIVE</div>
+            </div>
+            <div class="event-stream" id="event-stream">
+              <div class="stream-empty">Start the simulator to begin ingesting events...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
